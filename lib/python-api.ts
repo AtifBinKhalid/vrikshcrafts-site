@@ -17,6 +17,8 @@ export async function proxyPythonApi(request: Request) {
   }
   headers.set("x-forwarded-host", request.headers.get("host") || requestUrl.host);
   headers.set("x-forwarded-proto", requestUrl.protocol.replace(":", ""));
+  const sharedSecret = process.env.PYTHON_API_SHARED_SECRET?.trim();
+  if (sharedSecret) headers.set("x-vrikshcrafts-proxy-key", sharedSecret);
 
   try {
     const upstream = await fetch(targetUrl, {

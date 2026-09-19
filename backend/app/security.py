@@ -23,6 +23,14 @@ def is_valid_admin_token(candidate: str) -> bool:
     return is_admin_configured() and hmac.compare_digest(candidate, _admin_token())
 
 
+def is_trusted_proxy_request(request: Request) -> bool:
+    shared_secret = env("PYTHON_API_SHARED_SECRET")
+    if not shared_secret:
+        return env("APP_ENV", "development").casefold() != "production"
+    provided = request.headers.get("x-vrikshcrafts-proxy-key", "")
+    return hmac.compare_digest(provided, shared_secret)
+
+
 def _sign(expires_at: str) -> str:
     return hmac.new(
         _admin_token().encode("utf-8"),

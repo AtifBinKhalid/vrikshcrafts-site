@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: vrikshcrafts-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PYTHON_API_SHARED_SECRET
+        sync: false
+      - key: KNOWLEDGE_ADMIN_TOKEN
+        sync: false
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: deepseek/deepseek-v4-flash-0731:free
+      - key: OPENROUTER_FALLBACK_MODELS
+        value: openrouter/free
+      - key: OPENROUTER_DATA_COLLECTION
+        value: deny
+      - key: OPENROUTER_DAILY_REQUEST_LIMIT
+        value: "45"

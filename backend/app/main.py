@@ -38,6 +38,7 @@ from .security import (
     is_admin_configured,
     is_admin_request,
     is_same_origin,
+    is_trusted_proxy_request,
     is_valid_admin_token,
 )
 
@@ -176,6 +177,12 @@ def _require_admin(request: Request) -> Optional[JSONResponse]:
     return None
 
 
+def _require_trusted_proxy(request: Request) -> Optional[JSONResponse]:
+    if is_trusted_proxy_request(request):
+        return None
+    return json_response({"error": "The API proxy is not authorized."}, 403)
+
+
 def _normalize_source_url(value: str) -> Optional[str]:
     candidate = value.strip() or "/contact"
     if candidate.startswith("/") and not candidate.startswith("//"):
@@ -202,6 +209,9 @@ async def health() -> Dict[str, object]:
 @app.post("/api/chat")
 async def chat(request: Request) -> JSONResponse:
     try:
+        proxy_rejection = _require_trusted_proxy(request)
+        if proxy_rejection:
+            return proxy_rejection
         if not is_same_origin(request, allow_missing=True):
             return json_response({"error": "Cross-site chat requests are not allowed."}, 403)
         if "application/json" not in request.headers.get("content-type", ""):
@@ -273,6 +283,9 @@ async def chat(request: Request) -> JSONResponse:
 @app.post("/api/contact")
 async def contact(request: Request) -> JSONResponse:
     try:
+        proxy_rejection = _require_trusted_proxy(request)
+        if proxy_rejection:
+            return proxy_rejection
         if not is_same_origin(request, allow_missing=True):
             return json_response({"success": False, "error": "Cross-site requests are not allowed."}, 403)
         if "application/json" not in request.headers.get("content-type", ""):
@@ -339,6 +352,9 @@ async def contact(request: Request) -> JSONResponse:
 
 @app.get("/api/admin/knowledge/session")
 async def session_status(request: Request) -> JSONResponse:
+    proxy_rejection = _require_trusted_proxy(request)
+    if proxy_rejection:
+        return proxy_rejection
     return json_response(
         {"configured": is_admin_configured(), "authenticated": is_admin_request(request)}
     )
@@ -346,6 +362,9 @@ async def session_status(request: Request) -> JSONResponse:
 
 @app.post("/api/admin/knowledge/session")
 async def login(request: Request) -> JSONResponse:
+    proxy_rejection = _require_trusted_proxy(request)
+    if proxy_rejection:
+        return proxy_rejection
     if not is_same_origin(request):
         return json_response({"error": "Cross-site requests are not allowed."}, 403)
     if not is_admin_configured():
@@ -375,6 +394,9 @@ async def login(request: Request) -> JSONResponse:
 
 @app.delete("/api/admin/knowledge/session")
 async def logout(request: Request) -> JSONResponse:
+    proxy_rejection = _require_trusted_proxy(request)
+    if proxy_rejection:
+        return proxy_rejection
     if not is_same_origin(request):
         return json_response({"error": "Cross-site requests are not allowed."}, 403)
     response = json_response({"authenticated": False})
@@ -384,6 +406,9 @@ async def logout(request: Request) -> JSONResponse:
 
 @app.get("/api/admin/knowledge")
 async def knowledge_dashboard(request: Request) -> JSONResponse:
+    proxy_rejection = _require_trusted_proxy(request)
+    if proxy_rejection:
+        return proxy_rejection
     rejection = _require_admin(request)
     if rejection:
         return rejection
@@ -402,6 +427,9 @@ async def knowledge_dashboard(request: Request) -> JSONResponse:
 
 @app.post("/api/admin/knowledge")
 async def upload_knowledge(request: Request) -> JSONResponse:
+    proxy_rejection = _require_trusted_proxy(request)
+    if proxy_rejection:
+        return proxy_rejection
     rejection = _require_admin(request)
     if rejection:
         return rejection
@@ -510,6 +538,9 @@ async def upload_knowledge(request: Request) -> JSONResponse:
 
 @app.delete("/api/admin/knowledge")
 async def remove_knowledge(request: Request) -> JSONResponse:
+    proxy_rejection = _require_trusted_proxy(request)
+    if proxy_rejection:
+        return proxy_rejection
     rejection = _require_admin(request)
     if rejection:
         return rejection

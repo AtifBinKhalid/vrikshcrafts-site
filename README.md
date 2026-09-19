@@ -13,6 +13,8 @@ A Next.js frontend with a Python FastAPI backend for the vrikshcrafts B2B wood-d
 
 `npm run dev` starts the Next.js interface on port 3000 and the FastAPI AI service on port 8000. The browser continues to call the same `/api/...` URLs; thin Next.js routes forward those requests to FastAPI using `PYTHON_API_URL`.
 
+`PYTHON_API_SHARED_SECRET` should contain the same long random value in the Next.js and FastAPI environments. In production, FastAPI rejects API requests that do not arrive through the trusted Next.js proxy.
+
 The Python contact endpoint deliberately returns an unavailable response when SMTP is incomplete. It never reports a successful enquiry unless the message was accepted by the configured SMTP server.
 
 ## Website assistant
@@ -46,6 +48,13 @@ The current zero-cost retriever uses BM25-style lexical ranking rather than vect
 - `NEXT_PUBLIC_SITE_URL` controls canonical URLs, sitemap links, and metadata.
 - `PYTHON_API_URL` tells the Next.js proxy where the FastAPI service is available.
 - `APP_ENV=production` enables production-only backend security settings.
+- `PYTHON_API_SHARED_SECRET` authenticates calls from the Netlify Next.js proxy to FastAPI.
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and `SMTP_TO` configure enquiry delivery.
 
 For sustained or distributed traffic, replace the in-memory contact rate limiter with a shared store provided by the deployment platform.
+
+### Netlify frontend and Render API
+
+`render.yaml` defines a free FastAPI web service for the `python-fastapi-rag` branch. After Render provides the service URL, add that HTTPS origin as `PYTHON_API_URL` in Netlify. Set the same `PYTHON_API_SHARED_SECRET` in both services, add `KNOWLEDGE_ADMIN_TOKEN` on Render, then redeploy Netlify before merging this branch into `main`.
+
+Render's free filesystem is ephemeral. The reviewed core Markdown is always restored from Git, but Knowledge Studio uploads can disappear after a restart or idle spin-down. Persistent uploads require a database or object-storage adapter before relying on the studio as a permanent production CMS.
