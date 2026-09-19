@@ -1,6 +1,6 @@
 # vrikshcrafts website
 
-A Next.js frontend with a Python FastAPI backend for the vrikshcrafts B2B wood-decor business. Marketing pages are statically generated, catalog search runs locally in the browser, and FastAPI handles contact delivery, chat, RAG retrieval, document ingestion, and Knowledge Studio sessions.
+A Next.js frontend with a Python FastAPI backend for the vrikshcrafts B2B wood-decor business. Marketing pages are statically generated, catalog search runs locally in the browser, FastAPI handles chat, RAG retrieval, document ingestion, and Knowledge Studio sessions, and the Netlify-hosted Next.js contact route delivers enquiry email.
 
 ## Local setup
 
@@ -11,11 +11,11 @@ A Next.js frontend with a Python FastAPI backend for the vrikshcrafts B2B wood-d
 5. Start both services with `npm run dev`.
 6. Open <http://localhost:3000>.
 
-`npm run dev` starts the Next.js interface on port 3000 and the FastAPI AI service on port 8000. The browser continues to call the same `/api/...` URLs; thin Next.js routes forward those requests to FastAPI using `PYTHON_API_URL`.
+`npm run dev` starts the Next.js interface on port 3000 and the FastAPI AI service on port 8000. The browser continues to call the same `/api/...` URLs; thin Next.js chat and Knowledge Studio routes forward those requests to FastAPI using `PYTHON_API_URL`.
 
 `PYTHON_API_SHARED_SECRET` should contain the same long random value in the Next.js and FastAPI environments. In production, FastAPI rejects API requests that do not arrive through the trusted Next.js proxy.
 
-The Python contact endpoint deliberately returns an unavailable response when SMTP is incomplete. It never reports a successful enquiry unless the message was accepted by the configured SMTP server.
+The contact route remains on the Next.js host because Render's free service blocks common SMTP ports. It validates and rate-limits enquiries and never reports success unless the configured SMTP server accepts the message.
 
 ## Website assistant
 
@@ -39,7 +39,7 @@ The current zero-cost retriever uses BM25-style lexical ranking rather than vect
 - `npm run dev:web` — start only Next.js
 - `npm run dev:api` — start only FastAPI
 - `npm run lint` — run ESLint
-- `npm run test` — run frontend and Python backend tests
+- `npm run test` — run the Python backend tests
 - `npm run build` — create a production build
 - `npm run check` — run the complete verification sequence
 
@@ -49,9 +49,9 @@ The current zero-cost retriever uses BM25-style lexical ranking rather than vect
 - `PYTHON_API_URL` tells the Next.js proxy where the FastAPI service is available.
 - `APP_ENV=production` enables production-only backend security settings.
 - `PYTHON_API_SHARED_SECRET` authenticates calls from the Netlify Next.js proxy to FastAPI.
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and `SMTP_TO` configure enquiry delivery.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and `SMTP_TO` configure enquiry delivery in the Netlify-hosted Next.js route.
 
-For sustained or distributed traffic, replace the in-memory contact rate limiter with a shared store provided by the deployment platform.
+For sustained or distributed traffic, replace the per-instance contact and chat rate limiters with a shared store provided by the deployment platform.
 
 ### Netlify frontend and Render API
 
