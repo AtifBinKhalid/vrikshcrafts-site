@@ -25,6 +25,7 @@ export default function ContactPage() {
       projectType: formData.get("projectType") as string,
       budget: formData.get("budget") as string,
       message: formData.get("message") as string,
+      website: formData.get("website") as string,
     };
 
     try {
@@ -41,9 +42,11 @@ export default function ContactPage() {
 
       setFormState("success");
       form.reset();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFormState("error");
-      setErrorMsg(err.message || "Something went wrong.");
+      setErrorMsg(
+        err instanceof Error ? err.message : "Something went wrong.",
+      );
     }
   }
 
@@ -141,6 +144,7 @@ export default function ContactPage() {
             {/* Left: form */}
             <form
               onSubmit={handleSubmit}
+              aria-busy={formState === "submitting"}
               style={{
                 background:
                   "radial-gradient(circle at top left, #4a2a15 0, #2b1609 70%)",
@@ -152,6 +156,26 @@ export default function ContactPage() {
                 color: "#fef3c7",
               }}
             >
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  width: "1px",
+                  height: "1px",
+                  overflow: "hidden",
+                  clipPath: "inset(50%)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <label>
+                  Website
+                  <input
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </label>
+              </div>
               <div
                 style={{
                   display: "grid",
@@ -167,6 +191,9 @@ export default function ContactPage() {
                   <input
                     name="name"
                     required
+                    minLength={2}
+                    maxLength={100}
+                    autoComplete="name"
                     style={{
                       width: "100%",
                       marginTop: "0.25rem",
@@ -184,6 +211,8 @@ export default function ContactPage() {
                   </label>
                   <input
                     name="businessName"
+                    maxLength={120}
+                    autoComplete="organization"
                     style={{
                       width: "100%",
                       marginTop: "0.25rem",
@@ -214,6 +243,8 @@ export default function ContactPage() {
                     type="email"
                     name="email"
                     required
+                    maxLength={254}
+                    autoComplete="email"
                     style={{
                       width: "100%",
                       marginTop: "0.25rem",
@@ -230,7 +261,10 @@ export default function ContactPage() {
                     Phone (with country code)
                   </label>
                   <input
+                    type="tel"
                     name="phone"
+                    maxLength={40}
+                    autoComplete="tel"
                     style={{
                       width: "100%",
                       marginTop: "0.25rem",
@@ -259,6 +293,8 @@ export default function ContactPage() {
                   </label>
                   <input
                     name="city"
+                    maxLength={100}
+                    autoComplete="address-level2"
                     style={{
                       width: "100%",
                       marginTop: "0.25rem",
@@ -305,6 +341,7 @@ export default function ContactPage() {
                 </label>
                 <input
                   name="budget"
+                  maxLength={100}
                   placeholder="For example: ₹1–3 lakh, ₹3–5 lakh, etc."
                   style={{
                     width: "100%",
@@ -325,6 +362,8 @@ export default function ContactPage() {
                 <textarea
                   name="message"
                   required
+                  minLength={20}
+                  maxLength={3000}
                   rows={4}
                   placeholder="Describe your space, theme, timelines, and any references."
                   style={{
@@ -355,6 +394,24 @@ export default function ContactPage() {
               >
                 {formState === "submitting" ? "Submitting..." : "Submit enquiry"}
               </button>
+              <p
+                aria-live="polite"
+                style={{
+                  position: "absolute",
+                  width: "1px",
+                  height: "1px",
+                  overflow: "hidden",
+                  clipPath: "inset(50%)",
+                }}
+              >
+                {formState === "submitting"
+                  ? "Submitting your enquiry."
+                  : formState === "success"
+                    ? "Your enquiry was submitted successfully."
+                    : formState === "error"
+                      ? errorMsg
+                      : ""}
+              </p>
             </form>
 
             {/* Right: small info box */}

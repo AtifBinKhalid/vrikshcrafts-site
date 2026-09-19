@@ -3,24 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "next dev",
+    "dev:api": ".venv\\Scripts\\python.exe -m uvicorn backend.app.main:app --reload --port 8000",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "node scripts/dev.mjs --production",
+    "start:web": "next start",
+    "start:api": ".venv\\Scripts\\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000",
+    "lint": "eslint",
+    "test:api": ".venv\\Scripts\\python.exe -m unittest discover -s backend/tests -v",
+    "test": "npm run test:api",
+    "check": "npm run lint && npm run test && npm run build"
   },
   "dependencies": {
-    "next": "16.0.3",
-    "nodemailer": "^7.0.11",
+    "next": "^16.3.5",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/nodemailer": "^7.0.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.0.3",
+    "eslint-config-next": "^16.3.5",
     "typescript": "^5"
   }
 }

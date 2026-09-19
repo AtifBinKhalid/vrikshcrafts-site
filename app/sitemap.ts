@@ -1,9 +1,9 @@
 // app/sitemap.ts
 import type { MetadataRoute } from "next";
+import { getSiteUrl } from "../lib/site-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // TODO: change to your real domain when you have it
-  const baseUrl = "https://vrikshcrafts.example";
+  const baseUrl = getSiteUrl().toString().replace(/\/$/, "");
 
   return [
     {

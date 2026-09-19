@@ -34,11 +34,11 @@ export const CATALOG_ITEMS: CatalogItem[] = [
   },
   {
     id: "counters-bar-fronts",
-    title: "Counters & bar fronts",
+    title: "Counter fronts",
     subtitle: "Customer-facing surfaces",
     description:
-      "Wooden cladding, trims, and front panels for billing counters and bar fronts that match your overall theme.",
-    tags: ["counter", "billing", "bar", "front", "retail", "hospitality"],
+      "Wooden cladding, trims, and front panels for billing counter fronts that match your overall theme.",
+    tags: ["counter", "billing", "front", "retail", "hospitality"],
   },
   {
     id: "entrance-signage",
