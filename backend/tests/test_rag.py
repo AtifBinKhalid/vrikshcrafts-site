@@ -72,14 +72,31 @@ class RagTests(unittest.TestCase):
 
     def test_local_answer_clarifies_unknown_questions(self) -> None:
         answer = local_answer("Can you repair my laptop?", [], "Ativ")
-        self.assertIn("clarify", answer)
-        self.assertIn("knowledge base", answer)
+        self.assertIn("rather not guess", answer)
+        self.assertIn("tell me a little more", answer)
+        self.assertNotIn("knowledge base", answer)
 
     def test_local_answer_does_not_promise_exact_delivery(self) -> None:
         sources = retrieve_knowledge("Can you deliver 40 panels next Friday?", limit=5)
         answer = local_answer("Can you deliver 40 panels next Friday?", sources, "Ativ")
-        self.assertTrue(answer.startswith("I can’t confirm that timing"))
-        self.assertIn("team will confirm", answer)
+        self.assertTrue(answer.startswith("I’d rather not guess"))
+        self.assertIn("team can confirm", answer)
+
+    def test_local_answer_handles_conversation_naturally(self) -> None:
+        self.assertIn("thanks for asking", local_answer("How are you?", [], "Ativ"))
+        self.assertIn("glad that helped", local_answer("Thank you", [], "Ativ"))
+        product_answer = local_answer(
+            "What products do you offer?",
+            retrieve_knowledge("What products do you offer?"),
+            "Ativ",
+        )
+        self.assertTrue(product_answer.startswith("Here’s the short version"))
+        price_answer = local_answer(
+            "How much does it cost?",
+            retrieve_knowledge("How much does it cost?", limit=5),
+            "Ativ",
+        )
+        self.assertTrue(price_answer.startswith("Pricing is worked out project by project"))
 
     def test_persistent_source_is_searchable_without_duplicate_chunks(self) -> None:
         source = {

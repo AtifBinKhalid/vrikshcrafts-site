@@ -16,6 +16,18 @@ THANKS_PATTERN = re.compile(
     r"[!. ]*$",
     flags=re.IGNORECASE,
 )
+HOW_ARE_YOU_PATTERN = re.compile(
+    r"^(?:how are you|how(?:'s| is) it going|what(?:'s| is) up)[?!. ]*$",
+    flags=re.IGNORECASE,
+)
+ABOUT_ASSISTANT_PATTERN = re.compile(
+    r"^(?:who are you|what can you do|how can you help(?: me)?)[?!. ]*$",
+    flags=re.IGNORECASE,
+)
+GOODBYE_PATTERN = re.compile(
+    r"^(?:bye|goodbye|see you|talk to you later|that(?:'s| is) all)[?!. ]*$",
+    flags=re.IGNORECASE,
+)
 REFERENCE_PATTERN = re.compile(
     r"\b(?:it|its|that|those|this|these|them|there|same|above|one|ones)\b|"
     r"^(?:and|also|what about|how about|then)\b",
@@ -172,6 +184,53 @@ def _synthesize_from_sources(question: str, sources: List[Dict[str, object]]) ->
     return " ".join(sentence for _, _, sentence in selected).strip()
 
 
+def _humanize_grounded_answer(answer: str, source_ids: set[str]) -> str:
+    if "minimum-order-budget" in source_ids:
+        natural_answer = answer.replace(
+            "The website does not publish fixed prices because",
+            "Pricing is worked out project by project because",
+            1,
+        )
+        if not natural_answer.startswith("Pricing"):
+            natural_answer = f"Pricing is worked out project by project. {natural_answer}"
+        return natural_answer
+    if "catalog-overview" in source_ids:
+        return f"Here’s the short version: {answer}"
+    if "customization" in source_ids:
+        return f"Yes—customization is possible. {answer}"
+    if "shipping" in source_ids:
+        return answer.replace(
+            "vrikshcrafts is based in Saharanpur and works with clients across India.",
+            "Yes—we work with clients across India.",
+            1,
+        )
+    if "timelines-availability" in source_ids:
+        return f"Timelines are planned project by project. {answer}"
+    return answer
+
+
+def _project_next_step(source_ids: set[str]) -> str:
+    if "minimum-order-budget" in source_ids:
+        return (
+            "If you’d like a quotation, share the product type, dimensions, quantity, "
+            "finish, destination, and preferred timeline."
+        )
+    if "shipping" in source_ids or "timelines-availability" in source_ids:
+        return (
+            "If you share the item, quantity, dimensions, destination, and preferred date, "
+            "the team can confirm what’s realistic."
+        )
+    if "customization" in source_ids:
+        return (
+            "If you share a logo, moodboard, dimensions, quantity, and finish reference, "
+            "the team can assess the idea properly."
+        )
+    return (
+        "If you share the product, quantity, dimensions, destination, and preferred timeline, "
+        "the team can give you a reliable project-specific answer."
+    )
+
+
 def local_answer(
     question: str,
     sources: List[Dict[str, object]],
@@ -181,29 +240,43 @@ def local_answer(
     greeting = f"Hi, {visitor_name}!" if visitor_name else "Hello!"
     if SMALL_TALK_PATTERN.fullmatch(question.strip()):
         return (
-            f"{greeting} I can help with products, customization, project planning, "
-            "shipping, and quotations. What are you working on?"
+            f"{greeting} Nice to meet you. Tell me what you’re planning—even a rough idea "
+            "is enough—and I’ll help you work through products, customization, shipping, "
+            "or the next step."
+        )
+    if HOW_ARE_YOU_PATTERN.fullmatch(question.strip()):
+        return "I’m doing well—thanks for asking! What are you hoping to create or source today?"
+    if ABOUT_ASSISTANT_PATTERN.fullmatch(question.strip()):
+        return (
+            "I’m here to help you understand what vrikshcrafts offers and plan your next step. "
+            "You can ask me about products, customization, quotations, shipping, or what to "
+            "include in a project brief."
         )
     if THANKS_PATTERN.fullmatch(question.strip()):
-        return "You’re welcome! If you share what you are planning, I can help you find the most relevant products or next step."
+        return "You’re welcome—I’m glad that helped. What would you like to explore next?"
+    if GOODBYE_PATTERN.fullmatch(question.strip()):
+        return "Thanks for stopping by. Whenever you’re ready, I’ll be here to help with your project."
     if not sources:
         prefix = "I’m sorry this has been frustrating. " if re.search(
             r"\b(?:angry|bad|frustrat|problem|upset|wrong)\w*\b", question, re.IGNORECASE
         ) else ""
         return (
-            f"{prefix}I couldn’t find a reliable answer in the vrikshcrafts knowledge base. "
-            "Could you clarify whether this is about a product, customization, shipping, "
-            "pricing, or an existing project?"
+            f"{prefix}I don’t have enough verified information to answer that confidently, "
+            "and I’d rather not guess. Could you tell me a little more about what you mean? "
+            "For example, is this about a product, customization, shipping, pricing, or an "
+            "existing project?"
         )
 
     answer = _synthesize_from_sources(retrieval_query or question, sources)
     if not answer:
         return (
-            "I found related information, but not enough to answer confidently. "
-            "Please rephrase the question or share your project details with the team."
+            "I found something related, but not enough to give you a useful answer yet. "
+            "Could you share the product or project you have in mind?"
         )
 
     query_tokens = set(tokenize(question))
+    source_ids = {str(source.get("id")) for source in sources}
+    answer = _humanize_grounded_answer(answer, source_ids)
     asks_for_exact_timing = bool(
         query_tokens & {"availability", "delivery", "shipping", "stock", "timeline"}
         and re.search(
@@ -214,12 +287,12 @@ def local_answer(
         )
     )
     if asks_for_exact_timing:
-        answer = f"I can’t confirm that timing from the published information. {answer}"
-    if query_tokens & PROJECT_DETAIL_TERMS:
         return (
-            f"{answer}\n\nFor an exact project-specific answer, share your requirements "
-            "through the enquiry form and the team will confirm the details."
+            f"I’d rather not guess about that deadline. {answer}\n\n"
+            f"{_project_next_step(source_ids)}"
         )
+    if query_tokens & PROJECT_DETAIL_TERMS:
+        return f"{answer}\n\n{_project_next_step(source_ids)}"
     return answer
 
 

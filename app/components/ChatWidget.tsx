@@ -37,7 +37,7 @@ const NAME_PROMPT: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi! Welcome to vrikshcrafts. Before we begin, what should I call you?",
+    "Hi! I’m the vrikshcrafts assistant. Before we get started, what name should I use for you?",
   isWelcome: true,
 };
 
@@ -45,7 +45,7 @@ function welcomeMessage(name: string): Message {
   return {
     id: "welcome",
     role: "assistant",
-    content: `Hi, ${name}! 👋 I’m the vrikshcrafts assistant. Ask me about our products, customization, shipping, or your project.`,
+    content: `Nice to meet you, ${name}! 👋 Tell me what you’re planning—even a rough idea is fine—and I’ll help you work through products, customization, shipping, or next steps.`,
     isWelcome: true,
   };
 }
@@ -84,6 +84,29 @@ function readVisitorName(value: string) {
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+}
+
+function MessageText({ message }: { message: Message }) {
+  return (
+    <div className="chat-message-content">
+      {message.content.split(/\n{2,}/).map((block, blockIndex) => {
+        const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+        const listItems = lines.map((line) =>
+          line.match(/^(?:[-•]|\d+[.)])\s+(.+)$/)?.[1],
+        );
+        if (lines.length > 0 && listItems.every(Boolean)) {
+          return (
+            <ul key={`${message.id}-list-${blockIndex}`}>
+              {listItems.map((item, itemIndex) => (
+                <li key={`${message.id}-item-${blockIndex}-${itemIndex}`}>{item}</li>
+              ))}
+            </ul>
+          );
+        }
+        return <p key={`${message.id}-paragraph-${blockIndex}`}>{block}</p>;
+      })}
+    </div>
+  );
 }
 
 export default function ChatWidget() {
@@ -134,7 +157,7 @@ export default function ChatWidget() {
           {
             id: createId(),
             role: "assistant",
-            content: "Please enter just your first name so I can greet you properly.",
+            content: "I didn’t quite catch your name. Just your first name is perfect.",
             isError: true,
             isWelcome: true,
           },
@@ -206,7 +229,7 @@ export default function ChatWidget() {
           content:
             error instanceof Error
               ? error.message
-              : "The assistant is temporarily unavailable.",
+              : "I’m having trouble answering right now. Please try again in a moment.",
           isError: true,
         },
       ]);
@@ -257,11 +280,7 @@ export default function ChatWidget() {
                   message.isError ? " chat-message-error" : ""
                 }`}
               >
-                <div className="chat-message-content">
-                  {message.content.split(/\n{2,}/).map((paragraph, index) => (
-                    <p key={`${message.id}-paragraph-${index}`}>{paragraph}</p>
-                  ))}
-                </div>
+                <MessageText message={message} />
                 {message.sources && message.sources.length > 0 && (
                   <div className="chat-sources" aria-label="Verified sources">
                     <span className="chat-sources-label">Based on vrikshcrafts knowledge</span>
@@ -298,7 +317,7 @@ export default function ChatWidget() {
                 <span />
                 <span />
                 <span />
-                <span className="sr-only">Checking vrikshcrafts knowledge</span>
+                <span className="chat-typing-label">Looking that up…</span>
               </div>
             )}
             <div ref={endRef} />

@@ -859,6 +859,15 @@ body > main {
   margin-top: 0.55rem;
 }
 
+.chat-message-content ul {
+  margin: 0.15rem 0;
+  padding-left: 1.15rem;
+}
+
+.chat-message-content li + li {
+  margin-top: 0.3rem;
+}
+
 .chat-sources {
   display: flex;
   flex-wrap: wrap;
@@ -916,12 +925,18 @@ body > main {
   min-height: 38px;
 }
 
-.chat-typing > span:not(.sr-only) {
+.chat-typing > span:not(.chat-typing-label) {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: #9b7a58;
   animation: chat-pulse 1.1s infinite ease-in-out;
+}
+
+.chat-typing-label {
+  margin-left: 0.18rem;
+  color: #7b6a59;
+  font-size: 0.72rem;
 }
 
 .chat-typing > span:nth-child(2) {
@@ -1021,7 +1036,7 @@ body > main {
 
 @media (prefers-reduced-motion: reduce) {
   .chat-launcher,
-  .chat-typing > span:not(.sr-only) {
+  .chat-typing > span:not(.chat-typing-label) {
     transition: none;
     animation: none;
   }
