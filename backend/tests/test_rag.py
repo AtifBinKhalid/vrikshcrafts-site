@@ -3,7 +3,12 @@ from __future__ import annotations
 import unittest
 
 from backend.app.chunking import chunk_knowledge_text
-from backend.app.answering import build_retrieval_query, local_answer, suggested_follow_ups
+from backend.app.answering import (
+    build_retrieval_query,
+    conversational_reply,
+    local_answer,
+    suggested_follow_ups,
+)
 from backend.app.knowledge import load_core_knowledge
 from backend.app.retrieval import retrieve_knowledge, tokenize
 
@@ -97,6 +102,40 @@ class RagTests(unittest.TestCase):
             "Ativ",
         )
         self.assertTrue(price_answer.startswith("Pricing is worked out project by project"))
+
+    def test_dialogue_intents_are_handled_before_rag(self) -> None:
+        identity_reply = conversational_reply("Hi do you know me", "Atif")
+        self.assertIsNotNone(identity_reply)
+        identity_answer, identity_suggestions = identity_reply or ("", [])
+        self.assertIn("Atif", identity_answer)
+        self.assertIn("from this chat", identity_answer)
+        self.assertTrue(identity_suggestions)
+
+        question_reply = conversational_reply("I want to ask a question", "Atif")
+        self.assertIsNotNone(question_reply)
+        question_answer, question_suggestions = question_reply or ("", [])
+        self.assertIn("go ahead", question_answer)
+        self.assertTrue(question_suggestions)
+
+        project_reply = conversational_reply("I want to ask about a project", "Atif")
+        self.assertIsNotNone(project_reply)
+        project_answer, project_suggestions = project_reply or ("", [])
+        self.assertIn("tell me about the project", project_answer)
+        self.assertTrue(any("space" in item for item in project_suggestions))
+
+        topic_reply = conversational_reply(
+            "Not about a project actually sorry. I want to ask about something else",
+            "Atif",
+        )
+        self.assertIsNotNone(topic_reply)
+        topic_answer, topic_suggestions = topic_reply or ("", [])
+        self.assertIn("No problem", topic_answer)
+        self.assertIn("rather than make up", topic_answer)
+        self.assertTrue(topic_suggestions)
+
+        self.assertIsNone(
+            conversational_reply("What products do you offer?", "Atif")
+        )
 
     def test_persistent_source_is_searchable_without_duplicate_chunks(self) -> None:
         source = {

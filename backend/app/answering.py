@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
 from .retrieval import tokenize
 
@@ -26,6 +26,25 @@ ABOUT_ASSISTANT_PATTERN = re.compile(
 )
 GOODBYE_PATTERN = re.compile(
     r"^(?:bye|goodbye|see you|talk to you later|that(?:'s| is) all)[?!. ]*$",
+    flags=re.IGNORECASE,
+)
+IDENTITY_PATTERN = re.compile(
+    r"^(?:(?:hi|hello|hey)[,! ]+)?(?:do you (?:know|remember) me|remember me|"
+    r"what(?:'s| is) my name|who am i)[?!. ]*$",
+    flags=re.IGNORECASE,
+)
+TOPIC_SWITCH_PATTERN = re.compile(
+    r"\b(?:not about (?:a |the )?project|something else|a different (?:thing|topic)|"
+    r"change (?:the )?(?:subject|topic)|another topic)\b",
+    flags=re.IGNORECASE,
+)
+ASK_PERMISSION_PATTERN = re.compile(
+    r"\b(?:i (?:want|would like|need) to ask|can i ask|may i ask|"
+    r"i have (?:a|one|another) question|let me ask)\b",
+    flags=re.IGNORECASE,
+)
+ACKNOWLEDGEMENT_PATTERN = re.compile(
+    r"^(?:ok|okay|alright|all right|sure|sounds good|got it)[?!. ]*$",
     flags=re.IGNORECASE,
 )
 REFERENCE_PATTERN = re.compile(
@@ -88,6 +107,58 @@ FOLLOW_UPS = {
         "How quickly will the team respond?",
     ],
 }
+
+GENERAL_CONVERSATION_SUGGESTIONS = [
+    "What products do you offer?",
+    "Can you customize for my brand?",
+    "How do I request a quotation?",
+]
+PROJECT_CONVERSATION_SUGGESTIONS = [
+    "Which products could suit my space?",
+    "Can you match my brand or interior theme?",
+    "What should I share for a quotation?",
+]
+
+
+def conversational_reply(
+    question: str,
+    visitor_name: str,
+) -> Optional[Tuple[str, List[str]]]:
+    """Handle dialogue acts that should never be sent through document retrieval."""
+    message = question.strip()
+    greeting = f"Yes—I know you as {visitor_name} from this chat." if visitor_name else (
+        "I don’t know your name yet, but I’d be happy to learn it."
+    )
+
+    if IDENTITY_PATTERN.fullmatch(message):
+        return (
+            f"{greeting} How can I help you today?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if TOPIC_SWITCH_PATTERN.search(message):
+        return (
+            "No problem at all. What would you like to talk about? I’m best at "
+            "vrikshcrafts-related questions, so if something is outside that area, "
+            "I’ll be honest rather than make up an answer.",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if ASK_PERMISSION_PATTERN.search(message):
+        if re.search(r"\bproject\b", message, re.IGNORECASE):
+            return (
+                "Of course—tell me about the project. You can start with the kind of "
+                "space, what you want to create, or whichever question is on your mind.",
+                PROJECT_CONVERSATION_SUGGESTIONS,
+            )
+        return (
+            "Of course—go ahead. What would you like to ask?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if ACKNOWLEDGEMENT_PATTERN.fullmatch(message):
+        return (
+            "Great—what would you like to explore?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    return None
 
 
 def build_retrieval_query(question: str, history: List[Dict[str, str]]) -> str:

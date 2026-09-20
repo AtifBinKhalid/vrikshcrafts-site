@@ -14,7 +14,12 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.datastructures import UploadFile
 
-from .answering import build_retrieval_query, local_answer, suggested_follow_ups
+from .answering import (
+    build_retrieval_query,
+    conversational_reply,
+    local_answer,
+    suggested_follow_ups,
+)
 from .chunking import chunk_knowledge_text
 from .contact import deliver_contact_email, validate_contact_payload
 from .config import (
@@ -234,6 +239,17 @@ async def chat(request: Request) -> JSONResponse:
             )
         question = str(validated["message"])
         visitor_name = str(validated["visitorName"])
+        conversation = conversational_reply(question, visitor_name)
+        if conversation:
+            conversation_answer, conversation_suggestions = conversation
+            return json_response(
+                {
+                    "answer": conversation_answer,
+                    "mode": "conversation",
+                    "sources": [],
+                    "suggestions": conversation_suggestions,
+                }
+            )
         retrieval_query = build_retrieval_query(question, validated["history"])
         persistent_sources = await fetch_persistent_sources()
         sources = [
