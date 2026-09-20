@@ -37,7 +37,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     title: "Counter fronts",
     subtitle: "Customer-facing surfaces",
     description:
-      "Wooden cladding, trims, and front panels for billing counter fronts that match your overall theme.",
+      "Wooden cladding, trims, and front panels for billing counters that match your overall theme.",
     tags: ["counter", "billing", "front", "retail", "hospitality"],
   },
   {
@@ -53,7 +53,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     title: "Giftable small decor",
     subtitle: "Retail-friendly and repeatable",
     description:
-      "Smaller SKUs that can be reordered in batches for decor / gift stores and corporate gifting requirements.",
+      "Smaller SKUs that can be reordered in batches for decor and gift stores and corporate gifting requirements.",
     tags: ["giftable", "small decor", "store", "corporate gift", "sku"],
   },
 ];

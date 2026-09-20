@@ -8,12 +8,12 @@ import ChatWidget from "./components/ChatWidget";
 export const metadata: Metadata = {
   title: "vrikshcrafts — Saharanpur wood decor for B2B projects",
   description:
-    "vrikshcrafts is a Saharanpur-based wood decor partner for cafes, offices, interior designers and decor stores. We curate handcrafted wooden pieces and coordinate production for B2B projects.",
+    "vrikshcrafts is a Saharanpur-based wood decor partner for cafés, offices, interior designers, and decor stores. We curate handcrafted wooden pieces and coordinate production for B2B projects.",
   metadataBase: getSiteUrl(),
   openGraph: {
     title: "vrikshcrafts — Saharanpur wood decor for B2B projects",
     description:
-      "Handcrafted wood decor from Saharanpur for cafes, offices, studios and decor stores. Curated B2B sourcing with clear communication and realistic timelines.",
+      "Handcrafted wood decor from Saharanpur for cafés, offices, studios, and decor stores. Curated B2B sourcing with clear communication and realistic timelines.",
     url: "/",
     siteName: "vrikshcrafts",
     type: "website",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "vrikshcrafts — Saharanpur wood decor for B2B projects",
     description:
-      "B2B-focused wood decor partner for cafes, offices and designers.",
+      "B2B-focused wood decor partner for cafés, offices, and designers.",
   },
   icons: {
     icon: "/favicon.ico",

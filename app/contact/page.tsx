@@ -329,7 +329,7 @@ export default function ContactPage() {
                     <option value="Cafe">Cafe / restaurant</option>
                     <option value="Office">Office / workspace</option>
                     <option value="Designer">Interior designer / studio</option>
-                    <option value="Store">Decor / gift store</option>
+                    <option value="Store">Decor and gift store</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>

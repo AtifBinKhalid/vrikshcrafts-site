@@ -142,7 +142,7 @@ const FAQ_ITEMS = [
   {
     question: "Do you only work with businesses?",
     answer:
-      "vrikshcrafts is mainly focused on B2B work – cafés, offices, studios, and decor / gift stores. For individual buyers, we usually take projects where there is a clear decor plan or multiple pieces planned together.",
+      "vrikshcrafts is mainly focused on B2B work – cafés, offices, studios, and decor and gift stores. For individual buyers, we usually take projects where there is a clear decor plan or multiple pieces planned together.",
   },
   {
     question: "Is there a minimum budget or order size?",
@@ -195,7 +195,7 @@ export default function FaqSection() {
           }}
         >
           A quick overview of how vrikshcrafts usually works with cafés, offices,
-          designers, and decor / gift stores. If you have a different kind of
+          designers, and decor and gift stores. If you have a different kind of
           requirement, you can always share details on the enquiry page.
         </p>
 

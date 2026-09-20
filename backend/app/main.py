@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.datastructures import UploadFile
 
+from .answering import build_retrieval_query, local_answer, suggested_follow_ups
 from .chunking import chunk_knowledge_text
 from .contact import deliver_contact_email, validate_contact_payload
 from .config import (
@@ -157,16 +158,6 @@ def _validate_chat(payload: object) -> Tuple[Optional[Dict[str, object]], Option
     }, None
 
 
-def _local_answer(question: str, sources: List[Dict[str, object]], visitor_name: str) -> str:
-    greeting = f"Hi, {visitor_name}!" if visitor_name else "Hello!"
-    if re.fullmatch(r"(hi|hello|hey|namaste|namaskar)\b(?:[\s,!.'-]+\w+){0,3}[!. ]*", question, flags=re.IGNORECASE):
-        return f"{greeting} I can help with vrikshcrafts products, customization, project planning, shipping, and enquiries. What would you like to explore?"
-    if not sources:
-        lead = f"{visitor_name}, I" if visitor_name else "I"
-        return f"{lead} don’t have a reliable answer for that in the website information yet. Tell me a little more about your project, or use the enquiry form and our team will help you directly."
-    return f"{sources[0]['content']} For project-specific pricing, availability, or timelines, please use the enquiry form."
-
-
 def _require_admin(request: Request) -> Optional[JSONResponse]:
     if not is_admin_configured():
         return json_response(
@@ -243,10 +234,15 @@ async def chat(request: Request) -> JSONResponse:
             )
         question = str(validated["message"])
         visitor_name = str(validated["visitorName"])
+        retrieval_query = build_retrieval_query(question, validated["history"])
         persistent_sources = await fetch_persistent_sources()
-        sources = retrieve_knowledge(
-            question, limit=4, additional_sources=persistent_sources
-        )
+        sources = [
+            source
+            for source in retrieve_knowledge(
+                retrieval_query, limit=6, additional_sources=persistent_sources
+            )
+            if source.get("id") != "chatbot-answer-policy"
+        ][:5]
         answer: Optional[str] = None
         mode = "local-retrieval"
         if sources and is_openrouter_configured():
@@ -266,7 +262,9 @@ async def chat(request: Request) -> JSONResponse:
             except Exception as generation_error:
                 print(f"[vrikshcrafts] Chat generation failed: {generation_error}")
                 mode = "retrieval-fallback"
-        answer = answer or _local_answer(question, sources, visitor_name)
+        answer = answer or local_answer(
+            question, sources, visitor_name, retrieval_query=retrieval_query
+        )
         return json_response(
             {
                 "answer": answer,
@@ -275,6 +273,7 @@ async def chat(request: Request) -> JSONResponse:
                     {"id": source["id"], "title": source["title"], "url": source["url"]}
                     for source in sources[:3]
                 ],
+                "suggestions": suggested_follow_ups(sources),
             }
         )
     except Exception as request_error:

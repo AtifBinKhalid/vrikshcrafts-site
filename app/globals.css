@@ -855,6 +855,10 @@ body > main {
   color: #991b1b;
 }
 
+.chat-message-content p + p {
+  margin-top: 0.55rem;
+}
+
 .chat-sources {
   display: flex;
   flex-wrap: wrap;
@@ -862,6 +866,14 @@ body > main {
   margin-top: 0.6rem;
   padding-top: 0.55rem;
   border-top: 1px solid rgba(79, 47, 22, 0.12);
+}
+
+.chat-sources-label {
+  flex-basis: 100%;
+  color: #7b6a59;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .chat-sources a {

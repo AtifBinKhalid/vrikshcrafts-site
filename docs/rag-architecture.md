@@ -41,7 +41,10 @@ Admin upload / pasted text ──┘                                      │
 3. The retriever scores core and uploaded chunks using term frequency, inverse document frequency, titles, and keywords.
 4. The best chunks are passed to the selected OpenRouter model when configured.
 5. Without OpenRouter, the best source is returned through the deterministic local fallback.
-6. The answer policy prevents unsupported claims about pricing, stock, specifications, warranties, or delivery commitments.
+6. Short or referential follow-ups are rewritten with the most recent user topic before retrieval.
+7. The local answer engine ranks sentences across the best chunks instead of copying an entire document, then suggests relevant follow-up questions.
+8. The model prompt uses direct-answer-first guidance, clarification behavior, compact formatting, and a final grounding check.
+9. The answer policy prevents unsupported claims about pricing, stock, specifications, warranties, or delivery commitments.
 
 ## Security controls
 

@@ -4,14 +4,14 @@ import { CATALOG_ITEMS } from "../../src/data/catalogData";
 export const metadata: Metadata = {
   title: "Catalog · vrikshcrafts — Saharanpur wood decor",
   description:
-    "Explore how vrikshcrafts wooden decor can be used across walls, counters, tabletops, signage, and giftable items for cafés, offices, studios, and decor / gift stores.",
+    "Explore how vrikshcrafts wooden decor can be used across walls, counters, tabletops, signage, and giftable items for cafés, offices, studios, and decor and gift stores.",
   alternates: {
     canonical: "/catalog",
   },
   openGraph: {
     title: "Catalog · vrikshcrafts — Saharanpur wood decor",
     description:
-      "Browse example wooden decor categories from vrikshcrafts and see how they fit into café, office, studio, and decor / gift store spaces.",
+      "Browse example wooden decor categories from vrikshcrafts and see how they fit into café, office, studio, and decor and gift store spaces.",
     url: "/catalog",
     type: "website",
     siteName: "vrikshcrafts",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "Catalog · vrikshcrafts — Saharanpur wood decor",
     description:
-      "Catalog view of vrikshcrafts wooden decor categories for cafés, offices, studios, and decor / gift stores.",
+      "Catalog view of vrikshcrafts wooden decor categories for cafés, offices, studios, and decor and gift stores.",
   },
   keywords: [
     "vrikshcrafts catalog",
@@ -39,9 +39,9 @@ export default function CatalogPage() {
         <p className="hero-kicker">Catalog</p>
         <h1 className="hero-title">How vrikshcrafts can fit into your space</h1>
         <p className="hero-subtitle">
-          These are example categories we usually work with. Each project is customised,
+          These are example categories we usually work with. Each project is customized,
           but this gives you a clear idea of the kind of decor vrikshcrafts can supply
-          for cafés, offices, studios, and decor / gift stores.
+          for cafés, offices, studios, and decor and gift stores.
         </p>
 
         {/* Catalog cards */}
@@ -143,7 +143,7 @@ export default function CatalogPage() {
               Reception backdrops, meeting room walls, and small shelves in offices and studios.
             </li>
             <li style={{ marginBottom: "0.25rem" }}>
-              Tabletops, product-display shelves, and window spots in decor / gift stores.
+              Tabletops, product-display shelves, and window spots in decor and gift stores.
             </li>
             <li>
               Branded gifting pieces for clients, guests, or internal company events.

@@ -13,6 +13,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  suggestions?: string[];
   isError?: boolean;
   isWelcome?: boolean;
 };
@@ -21,6 +22,7 @@ type ChatResponse = {
   answer?: string;
   error?: string;
   sources?: Source[];
+  suggestions?: string[];
 };
 
 const VISITOR_NAME_KEY = "vrikshcraftsVisitorName";
@@ -192,6 +194,7 @@ export default function ChatWidget() {
           role: "assistant",
           content: data.answer!,
           sources: data.sources,
+          suggestions: data.suggestions,
         },
       ]);
     } catch (error) {
@@ -254,9 +257,14 @@ export default function ChatWidget() {
                   message.isError ? " chat-message-error" : ""
                 }`}
               >
-                <p>{message.content}</p>
+                <div className="chat-message-content">
+                  {message.content.split(/\n{2,}/).map((paragraph, index) => (
+                    <p key={`${message.id}-paragraph-${index}`}>{paragraph}</p>
+                  ))}
+                </div>
                 {message.sources && message.sources.length > 0 && (
-                  <div className="chat-sources" aria-label="Related pages">
+                  <div className="chat-sources" aria-label="Verified sources">
+                    <span className="chat-sources-label">Based on vrikshcrafts knowledge</span>
                     {message.sources.map((source) => (
                       <a key={source.id} href={source.url}>
                         {source.title}
@@ -267,9 +275,12 @@ export default function ChatWidget() {
               </div>
             ))}
 
-            {visitorName && messages.every((message) => message.isWelcome) && (
+            {visitorName && !isLoading && (
               <div className="chat-suggestions" aria-label="Suggested questions">
-                {QUICK_QUESTIONS.map((suggestion) => (
+                {(messages.every((message) => message.isWelcome)
+                  ? QUICK_QUESTIONS
+                  : messages.at(-1)?.suggestions || []
+                ).map((suggestion) => (
                   <button
                     key={suggestion}
                     type="button"
@@ -287,7 +298,7 @@ export default function ChatWidget() {
                 <span />
                 <span />
                 <span />
-                <span className="sr-only">Finding an answer</span>
+                <span className="sr-only">Checking vrikshcrafts knowledge</span>
               </div>
             )}
             <div ref={endRef} />
@@ -324,7 +335,7 @@ export default function ChatWidget() {
             </button>
           </form>
           <p className="chat-disclaimer">
-            Answers come from this website. Confirm project details with our team.
+            Grounded in approved vrikshcrafts information. Exact project details require team confirmation.
           </p>
         </section>
       )}

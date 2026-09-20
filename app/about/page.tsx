@@ -4,14 +4,14 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "About vrikshcrafts · Saharanpur B2B wood decor partner",
   description:
-    "Learn how vrikshcrafts connects Saharanpur’s handcrafted wood decor with cafes, offices, interior designers, and decor / gift stores through a focused B2B sourcing model.",
+    "Learn how vrikshcrafts connects Saharanpur’s handcrafted wood decor with cafés, offices, interior designers, and decor and gift stores through a focused B2B sourcing model.",
   alternates: {
     canonical: "/about",
   },
   openGraph: {
     title: "About vrikshcrafts · Saharanpur B2B wood decor partner",
     description:
-      "vrikshcrafts links Saharanpur workshops with cafes, offices, designers, and decor stores using a project-first, B2B-focused approach.",
+      "vrikshcrafts links Saharanpur workshops with cafés, offices, designers, and decor stores using a project-first, B2B-focused approach.",
     url: "/about",
     type: "website",
   },
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "About vrikshcrafts · Saharanpur B2B wood decor partner",
     description:
-      "Background and approach of vrikshcrafts, a Saharanpur-based B2B wood decor partner for cafes, offices, designers, and decor stores.",
+      "Background and approach of vrikshcrafts, a Saharanpur-based B2B wood decor partner for cafés, offices, designers, and decor stores.",
   },
   keywords: [
     "about vrikshcrafts",
@@ -40,8 +40,8 @@ export default function AboutPage() {
           <h1 className="hero-title">Saharanpur woodcraft, built for modern spaces.</h1>
           <p className="hero-subtitle">
             Vrikshcrafts is a Saharanpur-based wood decor partner that focuses on
-            B2B needs. We connect traditional workshops with cafes, offices,
-            interior designers, and decor / gift stores in a structured, project-first way.
+            B2B needs. We connect traditional workshops with cafés, offices,
+            interior designers, and decor and gift stores in a structured, project-first way.
           </p>
 
           {/* Brand story cards */}

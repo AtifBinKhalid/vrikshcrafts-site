@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from backend.app.chunking import chunk_knowledge_text
+from backend.app.answering import build_retrieval_query, local_answer, suggested_follow_ups
 from backend.app.knowledge import load_core_knowledge
 from backend.app.retrieval import retrieve_knowledge, tokenize
 
@@ -38,6 +39,47 @@ class RagTests(unittest.TestCase):
         self.assertIn(result["id"], {"customization", "service-overview"})
         self.assertIn("wood", tokenize("lakdi"))
         self.assertEqual(retrieve_knowledge("Who won the football match yesterday?"), [])
+
+    def test_short_follow_up_uses_recent_user_context(self) -> None:
+        query = build_retrieval_query(
+            "What about the timeline?",
+            [
+                {"role": "user", "content": "Can you make custom café wall panels?"},
+                {"role": "assistant", "content": "Yes, subject to project confirmation."},
+            ],
+        )
+        self.assertIn("custom café wall panels", query)
+        self.assertIn("timeline", query)
+        self.assertEqual(
+            retrieve_knowledge(query, limit=1)[0]["id"], "timelines-availability"
+        )
+        answer = local_answer(
+            "What about the timeline?",
+            retrieve_knowledge(query, limit=5),
+            "Ativ",
+            retrieval_query=query,
+        )
+        self.assertIn("realistic schedule", answer)
+        self.assertIn("lead-time", answer)
+
+    def test_local_answer_is_concise_and_contextual(self) -> None:
+        sources = retrieve_knowledge("What products do you offer?")
+        answer = local_answer("What products do you offer?", sources, "Ativ")
+        self.assertIn("vrikshcrafts", answer)
+        self.assertNotIn("For project-specific pricing", answer)
+        self.assertLess(len(answer), 1_000)
+        self.assertTrue(suggested_follow_ups(sources))
+
+    def test_local_answer_clarifies_unknown_questions(self) -> None:
+        answer = local_answer("Can you repair my laptop?", [], "Ativ")
+        self.assertIn("clarify", answer)
+        self.assertIn("knowledge base", answer)
+
+    def test_local_answer_does_not_promise_exact_delivery(self) -> None:
+        sources = retrieve_knowledge("Can you deliver 40 panels next Friday?", limit=5)
+        answer = local_answer("Can you deliver 40 panels next Friday?", sources, "Ativ")
+        self.assertTrue(answer.startswith("I can’t confirm that timing"))
+        self.assertIn("team will confirm", answer)
 
     def test_persistent_source_is_searchable_without_duplicate_chunks(self) -> None:
         source = {

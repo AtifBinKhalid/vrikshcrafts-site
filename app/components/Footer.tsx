@@ -20,7 +20,7 @@ export default function Footer() {
             <p className="footer-brand-title">vrikshcrafts</p>
             <p className="footer-brand-text">
               Handcrafted Saharanpur wood decor for cafés, offices, designers,
-              and decor / gift stores.
+              and decor and gift stores.
             </p>
           </div>
 
@@ -86,4 +86,3 @@ export default function Footer() {
 //     </footer>
 //   );
 // }
-

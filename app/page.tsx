@@ -6,7 +6,7 @@ export default function HomePage() {
         <div className="container">
           <p className="hero-kicker">Saharanpur craft · Global projects</p>
           <h1 className="hero-title">
-            Handcrafted wood decor for cafes, offices, and homes.
+            Handcrafted wood decor for cafés, offices, and homes.
           </h1>
 
           <p className="hero-subtitle" style={{ maxWidth: "34rem" }}>
@@ -28,7 +28,7 @@ export default function HomePage() {
           <div className="hero-grid">
             <div>
               <p className="info-card-title">B2B focused</p>
-              <p>Cafes, offices, interior designers, and decor / gift stores.</p>
+              <p>Cafés, offices, interior designers, and decor and gift stores.</p>
             </div>
             <div>
               <p className="info-card-title">Curated workshops</p>
@@ -144,7 +144,7 @@ export default function HomePage() {
                   marginBottom: "0.35rem",
                 }}
               >
-                Cafes & restaurants
+                Cafés & restaurants
               </p>
               <p>
                 Warm, handcrafted elements for feature walls, counters, and
@@ -231,15 +231,13 @@ export default function HomePage() {
                 Decor & gift stores
               </p>
               <p>
-                Small and mid-sized items that can be reordered as per demand,
+                Small and mid-sized items that can be reordered based on demand,
                 suitable for display and gifting.
               </p>
             </div>
           </div>
         </div>
       </section>
-
-      {/* HOW THE PROCESS WORKS
 
       {/* WHY BUSINESSES TRUST VRIKSHCRAFTS */}
       <section

@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Services · vrikshcrafts — Custom Saharanpur wood decor",
   description:
-    "See how vrikshcrafts designs and produces custom wooden signage, feature panels, tabletop decor, and small fixtures for cafés, offices, studios, and decor / gift stores.",
+    "See how vrikshcrafts designs and produces custom wooden signage, feature panels, tabletop decor, and small fixtures for cafés, offices, studios, and decor and gift stores.",
   alternates: {
     canonical: "/services",
   },
   openGraph: {
     title: "Services · vrikshcrafts — Custom Saharanpur wood decor",
     description:
-      "Custom wood decor design and B2B supply from Saharanpur for cafés, offices, studios, and decor / gift stores.",
+      "Custom wood decor design and B2B supply from Saharanpur for cafés, offices, studios, and decor and gift stores.",
     url: "/services",
     type: "website",
     siteName: "vrikshcrafts",
