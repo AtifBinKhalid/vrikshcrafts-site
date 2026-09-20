@@ -29,7 +29,7 @@ The FastAPI service keeps request counters in memory as a safe local and single-
 
 Open `/admin/knowledge` to manage additional chatbot knowledge. Set a private `KNOWLEDGE_ADMIN_TOKEN` of at least 16 characters before use. The studio supports Markdown, text, PDF, and Word (`.docx`) files up to 5 MB, plus pasted text. Every document is extracted, split by headings and paragraphs, previewed, and published only after explicit approval.
 
-The approved core source remains `knowledge/vrikshcrafts-rag-knowledge-base.md`. Studio uploads are written to `knowledge/uploads` and become searchable immediately without a server restart. Local filesystem storage is suitable for development or a persistent Python host; serverless deployment requires a persistent repository adapter backed by object storage or a database.
+The approved core source remains `knowledge/vrikshcrafts-rag-knowledge-base.md`. In local development, Studio uploads are written to `knowledge/uploads` and become searchable immediately without a server restart. On Netlify, the same documents are mirrored into a strongly consistent, site-wide Netlify Blobs store. FastAPI reads that private store through `/api/internal/knowledge`, authenticated with `PYTHON_API_SHARED_SECRET`, so published uploads survive both frontend deploys and Render restarts.
 
 The current zero-cost retriever uses BM25-style lexical ranking rather than vector embeddings. See `docs/rag-architecture.md` for the current data flow and the planned hybrid vector upgrade boundary.
 
@@ -49,6 +49,7 @@ The current zero-cost retriever uses BM25-style lexical ranking rather than vect
 - `PYTHON_API_URL` tells the Next.js proxy where the FastAPI service is available.
 - `APP_ENV=production` enables production-only backend security settings.
 - `PYTHON_API_SHARED_SECRET` authenticates calls from the Netlify Next.js proxy to FastAPI.
+- `KNOWLEDGE_STORE_URL` lets FastAPI read durable Knowledge Studio uploads from Netlify. Production uses `https://vrikshcrafts.netlify.app/api/internal/knowledge`.
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and `SMTP_TO` configure enquiry delivery in the Netlify-hosted Next.js route.
 
 For sustained or distributed traffic, replace the per-instance contact and chat rate limiters with a shared store provided by the deployment platform.
@@ -57,4 +58,4 @@ For sustained or distributed traffic, replace the per-instance contact and chat 
 
 `render.yaml` defines a free FastAPI web service for the `python-fastapi-rag` branch. After Render provides the service URL, add that HTTPS origin as `PYTHON_API_URL` in Netlify. Set the same `PYTHON_API_SHARED_SECRET` in both services, add `KNOWLEDGE_ADMIN_TOKEN` on Render, then redeploy Netlify before merging this branch into `main`.
 
-Render's free filesystem is ephemeral. The reviewed core Markdown is always restored from Git, but Knowledge Studio uploads can disappear after a restart or idle spin-down. Persistent uploads require a database or object-storage adapter before relying on the studio as a permanent production CMS.
+Render's free filesystem is ephemeral. The reviewed core Markdown is always restored from Git, and production Knowledge Studio uploads are durably mirrored to the existing Netlify project's site-wide Blobs store. The application limits this store to 50 sources and 2,000,000 extracted characters to keep the free deployment predictable.

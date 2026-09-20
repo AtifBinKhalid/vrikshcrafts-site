@@ -407,9 +407,9 @@ export default function KnowledgeStudio() {
         </div>
 
         <div className="knowledge-alert knowledge-alert-warning knowledge-storage-note">
-          Uploaded files are stored on this server. For a serverless production deployment,
-          connect this repository layer to persistent object storage or a database before relying
-          on uploads across deployments.
+          Published documents are stored in the site&apos;s durable knowledge store and remain
+          available across deployments. Keep source material factual, approved, and free of
+          private customer information.
         </div>
       </div>
     </section>

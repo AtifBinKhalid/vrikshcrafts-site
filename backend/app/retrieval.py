@@ -6,7 +6,7 @@ import unicodedata
 from collections import Counter
 from typing import Dict, List, Optional, Tuple
 
-from .knowledge import KnowledgeChunk, get_knowledge_snapshot
+from .knowledge import KnowledgeChunk, UploadedSource, get_knowledge_snapshot
 
 
 STOP_WORDS = {
@@ -39,9 +39,11 @@ _cached_revision: Optional[str] = None
 _cached_index: Optional[Tuple[List[Dict[str, object]], float, Counter]] = None
 
 
-def _get_search_index() -> Tuple[List[Dict[str, object]], float, Counter]:
+def _get_search_index(
+    additional_sources: Optional[List[UploadedSource]] = None,
+) -> Tuple[List[Dict[str, object]], float, Counter]:
     global _cached_revision, _cached_index
-    documents, revision = get_knowledge_snapshot()
+    documents, revision = get_knowledge_snapshot(additional_sources)
     if _cached_revision == revision and _cached_index is not None:
         return _cached_index
 
@@ -68,8 +70,14 @@ def _get_search_index() -> Tuple[List[Dict[str, object]], float, Counter]:
     return _cached_index
 
 
-def retrieve_knowledge(query: str, *, limit: int = 4, min_score: float = 0.65) -> List[KnowledgeChunk]:
-    indexed, average_length, document_frequency = _get_search_index()
+def retrieve_knowledge(
+    query: str,
+    *,
+    limit: int = 4,
+    min_score: float = 0.65,
+    additional_sources: Optional[List[UploadedSource]] = None,
+) -> List[KnowledgeChunk]:
+    indexed, average_length, document_frequency = _get_search_index(additional_sources)
     safe_limit = max(1, min(int(limit or 4), 8))
     query_tokens = list(dict.fromkeys(tokenize(query)))
     if not query_tokens:

@@ -39,6 +39,35 @@ class RagTests(unittest.TestCase):
         self.assertIn("wood", tokenize("lakdi"))
         self.assertEqual(retrieve_knowledge("Who won the football match yesterday?"), [])
 
+    def test_persistent_source_is_searchable_without_duplicate_chunks(self) -> None:
+        source = {
+            "schemaVersion": 1,
+            "id": "persistent-care-guide",
+            "title": "Persistent care guide",
+            "sourceUrl": "/contact",
+            "keywords": ["beeswax", "care"],
+            "originalFilename": "care.md",
+            "createdAt": "2026-09-20T00:00:00Z",
+            "updatedAt": "2026-09-20T00:00:00Z",
+            "characterCount": 80,
+            "chunks": [
+                {
+                    "id": "persistent-care-guide-1",
+                    "title": "Beeswax care",
+                    "url": "/contact",
+                    "content": "Use a soft cloth when maintaining the approved beeswax finish.",
+                    "keywords": ["beeswax", "care"],
+                }
+            ],
+        }
+        result = retrieve_knowledge(
+            "How do I care for a beeswax finish?", additional_sources=[source, source]
+        )
+        self.assertEqual(result[0]["id"], "persistent-care-guide-1")
+        self.assertEqual(
+            len([item for item in result if item["id"] == "persistent-care-guide-1"]), 1
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

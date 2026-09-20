@@ -32,6 +32,7 @@ from .knowledge import (
     save_uploaded_source,
 )
 from .openrouter import generate_grounded_answer, is_configured as is_openrouter_configured
+from .persistent_knowledge import fetch_persistent_sources
 from .retrieval import retrieve_knowledge
 from .security import (
     create_admin_session,
@@ -242,7 +243,10 @@ async def chat(request: Request) -> JSONResponse:
             )
         question = str(validated["message"])
         visitor_name = str(validated["visitorName"])
-        sources = retrieve_knowledge(question, limit=4)
+        persistent_sources = await fetch_persistent_sources()
+        sources = retrieve_knowledge(
+            question, limit=4, additional_sources=persistent_sources
+        )
         answer: Optional[str] = None
         mode = "local-retrieval"
         if sources and is_openrouter_configured():
@@ -509,14 +513,15 @@ async def upload_knowledge(request: Request) -> JSONResponse:
         "rawText": raw_text,
         "chunks": chunks,
     }
-    try:
-        save_uploaded_source(source)
-    except (OSError, ValueError) as persistence_error:
-        print(f"[vrikshcrafts] Knowledge upload failed: {persistence_error}")
-        return json_response(
-            {"error": "The server could not persist this document. Confirm that the deployment has writable storage."},
-            500,
-        )
+    if not env("KNOWLEDGE_STORE_URL"):
+        try:
+            save_uploaded_source(source)
+        except (OSError, ValueError) as persistence_error:
+            print(f"[vrikshcrafts] Knowledge upload failed: {persistence_error}")
+            return json_response(
+                {"error": "The server could not persist this document. Confirm that the deployment has writable storage."},
+                500,
+            )
     return json_response(
         {
             "source": {
@@ -531,6 +536,7 @@ async def upload_knowledge(request: Request) -> JSONResponse:
                 "characterCount": len(raw_text),
             },
             "preview": preview,
+            "persistentSource": source,
         },
         201,
     )

@@ -67,7 +67,7 @@ def load_core_knowledge() -> List[KnowledgeChunk]:
     return parse_knowledge_document(KNOWLEDGE_FILE.read_text(encoding="utf-8"))
 
 
-def _is_valid_uploaded_source(value: object) -> bool:
+def is_valid_uploaded_source(value: object) -> bool:
     if not isinstance(value, dict):
         return False
     chunks = value.get("chunks")
@@ -99,7 +99,7 @@ def _uploaded_source_files() -> List[Path]:
 def _read_uploaded_source(path: Path) -> Optional[UploadedSource]:
     try:
         parsed = json.loads(path.read_text(encoding="utf-8"))
-        return parsed if _is_valid_uploaded_source(parsed) else None
+        return parsed if is_valid_uploaded_source(parsed) else None
     except (OSError, ValueError, TypeError) as error:
         print(f"[vrikshcrafts] Could not load knowledge source {path.name}: {error}")
         return None
@@ -118,7 +118,9 @@ def list_uploaded_sources() -> List[Dict[str, object]]:
     return summaries
 
 
-def get_knowledge_snapshot() -> Tuple[List[KnowledgeChunk], str]:
+def get_knowledge_snapshot(
+    additional_sources: Optional[List[UploadedSource]] = None,
+) -> Tuple[List[KnowledgeChunk], str]:
     files = _uploaded_source_files()
     sources = [source for source in (_read_uploaded_source(path) for path in files) if source]
     upload_revision = "|".join(
@@ -126,14 +128,29 @@ def get_knowledge_snapshot() -> Tuple[List[KnowledgeChunk], str]:
     )
     core_stats = KNOWLEDGE_FILE.stat()
     documents = load_core_knowledge()
-    for source in sources:
-        documents.extend(source["chunks"])
-    revision = f"{core_stats.st_size}:{core_stats.st_mtime_ns}|{upload_revision}"
+    seen_ids = {str(document["id"]) for document in documents}
+    all_sources = sources + [
+        source for source in (additional_sources or []) if is_valid_uploaded_source(source)
+    ]
+    remote_revision: List[str] = []
+    for source in all_sources:
+        remote_revision.append(
+            f"{source['id']}:{source.get('updatedAt', '')}:{len(source['chunks'])}"
+        )
+        for chunk in source["chunks"]:
+            chunk_id = str(chunk["id"])
+            if chunk_id not in seen_ids:
+                documents.append(chunk)
+                seen_ids.add(chunk_id)
+    revision = (
+        f"{core_stats.st_size}:{core_stats.st_mtime_ns}|{upload_revision}|"
+        + "|".join(sorted(remote_revision))
+    )
     return documents, revision
 
 
 def save_uploaded_source(source: UploadedSource) -> None:
-    if not _is_valid_uploaded_source(source):
+    if not is_valid_uploaded_source(source):
         raise ValueError("The processed knowledge source is invalid.")
     UPLOAD_DIRECTORY.mkdir(parents=True, exist_ok=True)
     destination = (UPLOAD_DIRECTORY / f"{source['id']}.json").resolve()
