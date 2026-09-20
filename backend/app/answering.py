@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Optional, Tuple
 
-from .retrieval import tokenize
+from .retrieval import correct_common_typos, normalize_query_spelling, tokenize
 
 
 SMALL_TALK_PATTERN = re.compile(
@@ -118,6 +118,21 @@ PROJECT_CONVERSATION_SUGGESTIONS = [
     "Can you match my brand or interior theme?",
     "What should I share for a quotation?",
 ]
+INTENT_SPELLING_VOCABULARY = {
+    "alright", "another", "ask", "change", "different", "else", "good", "hello",
+    "help", "know", "name", "okay", "project", "question", "remember", "something",
+    "subject", "sure", "thing", "topic", "want", "what", "who", "would", "you",
+}
+
+
+def _normalize_intent_spelling(value: str) -> str:
+    domain_normalized = normalize_query_spelling(value)
+    return correct_common_typos(
+        domain_normalized,
+        INTENT_SPELLING_VOCABULARY,
+        minimum_length=3,
+        allow_substitution=False,
+    )
 
 
 def conversational_reply(
@@ -125,7 +140,7 @@ def conversational_reply(
     visitor_name: str,
 ) -> Optional[Tuple[str, List[str]]]:
     """Handle dialogue acts that should never be sent through document retrieval."""
-    message = question.strip()
+    message = _normalize_intent_spelling(question.strip())
     greeting = f"Yes—I know you as {visitor_name} from this chat." if visitor_name else (
         "I don’t know your name yet, but I’d be happy to learn it."
     )
@@ -309,23 +324,24 @@ def local_answer(
     retrieval_query: str = "",
 ) -> str:
     greeting = f"Hi, {visitor_name}!" if visitor_name else "Hello!"
-    if SMALL_TALK_PATTERN.fullmatch(question.strip()):
+    intent_message = _normalize_intent_spelling(question.strip())
+    if SMALL_TALK_PATTERN.fullmatch(intent_message):
         return (
             f"{greeting} Nice to meet you. Tell me what you’re planning—even a rough idea "
             "is enough—and I’ll help you work through products, customization, shipping, "
             "or the next step."
         )
-    if HOW_ARE_YOU_PATTERN.fullmatch(question.strip()):
+    if HOW_ARE_YOU_PATTERN.fullmatch(intent_message):
         return "I’m doing well—thanks for asking! What are you hoping to create or source today?"
-    if ABOUT_ASSISTANT_PATTERN.fullmatch(question.strip()):
+    if ABOUT_ASSISTANT_PATTERN.fullmatch(intent_message):
         return (
             "I’m here to help you understand what vrikshcrafts offers and plan your next step. "
             "You can ask me about products, customization, quotations, shipping, or what to "
             "include in a project brief."
         )
-    if THANKS_PATTERN.fullmatch(question.strip()):
+    if THANKS_PATTERN.fullmatch(intent_message):
         return "You’re welcome—I’m glad that helped. What would you like to explore next?"
-    if GOODBYE_PATTERN.fullmatch(question.strip()):
+    if GOODBYE_PATTERN.fullmatch(intent_message):
         return "Thanks for stopping by. Whenever you’re ready, I’ll be here to help with your project."
     if not sources:
         prefix = "I’m sorry this has been frustrating. " if re.search(
@@ -338,14 +354,16 @@ def local_answer(
             "existing project?"
         )
 
-    answer = _synthesize_from_sources(retrieval_query or question, sources)
+    answer = _synthesize_from_sources(
+        normalize_query_spelling(retrieval_query or question), sources
+    )
     if not answer:
         return (
             "I found something related, but not enough to give you a useful answer yet. "
             "Could you share the product or project you have in mind?"
         )
 
-    query_tokens = set(tokenize(question))
+    query_tokens = set(tokenize(normalize_query_spelling(question)))
     source_ids = {str(source.get("id")) for source in sources}
     answer = _humanize_grounded_answer(answer, source_ids)
     asks_for_exact_timing = bool(

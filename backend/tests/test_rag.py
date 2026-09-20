@@ -10,7 +10,7 @@ from backend.app.answering import (
     suggested_follow_ups,
 )
 from backend.app.knowledge import load_core_knowledge
-from backend.app.retrieval import retrieve_knowledge, tokenize
+from backend.app.retrieval import normalize_query_spelling, retrieve_knowledge, tokenize
 
 
 class RagTests(unittest.TestCase):
@@ -136,6 +136,36 @@ class RagTests(unittest.TestCase):
         self.assertIsNone(
             conversational_reply("What products do you offer?", "Atif")
         )
+
+    def test_common_spelling_errors_do_not_break_chat_intent_or_retrieval(self) -> None:
+        identity_reply = conversational_reply("Do you knwo me", "Atif")
+        self.assertIsNotNone(identity_reply)
+        identity_answer, _ = identity_reply or ("", [])
+        self.assertIn("Atif", identity_answer)
+
+        question_reply = conversational_reply(
+            "I wnat to ask a qusetion", "Atif"
+        )
+        self.assertIsNotNone(question_reply)
+        self.assertIn("go ahead", (question_reply or ("", []))[0])
+
+        self.assertEqual(
+            normalize_query_spelling("What prodcuts do you ofer?"),
+            "What products do you offer?",
+        )
+        self.assertEqual(
+            retrieve_knowledge("What prodcuts do you ofer?", limit=1)[0]["id"],
+            "catalog-overview",
+        )
+        typo_sources = retrieve_knowledge("What prodcuts do you ofer?")
+        typo_answer = local_answer(
+            "What prodcuts do you ofer?",
+            typo_sources,
+            "Atif",
+            retrieval_query="What prodcuts do you ofer?",
+        )
+        self.assertIn("made-to-order", typo_answer)
+        self.assertEqual(normalize_query_spelling("Do you sell food?"), "Do you sell food?")
 
     def test_persistent_source_is_searchable_without_duplicate_chunks(self) -> None:
         source = {

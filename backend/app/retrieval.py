@@ -4,7 +4,7 @@ import math
 import re
 import unicodedata
 from collections import Counter
-from typing import Dict, List, Optional, Tuple
+from typing import Collection, Dict, List, Optional, Tuple
 
 from .knowledge import KnowledgeChunk, UploadedSource, get_knowledge_snapshot
 
@@ -29,6 +29,79 @@ SYNONYMS = {
     "kharid": "order", "banwana": "custom", "banate": "custom",
     "founded": "founder", "started": "founder",
 }
+RETRIEVAL_SPELLING_VOCABULARY = {
+    "availability", "catalog", "catalogue", "contact", "custom", "customization",
+    "customize", "decor", "delivery", "dimensions", "finish", "founder", "material",
+    "minimum", "offer", "order", "panels", "payment", "price", "pricing", "product",
+    "products", "project", "quotation", "quote", "return", "services", "shipping",
+    "signage", "timeline", "warranty", "whatsapp", "wood", "wooden",
+}
+
+
+def _is_likely_typo(value: str, candidate: str, *, allow_substitution: bool) -> bool:
+    """Match one missing/extra letter or one adjacent transposition conservatively."""
+    if value == candidate or abs(len(value) - len(candidate)) > 1:
+        return False
+    if len(value) == len(candidate):
+        mismatches = [
+            index
+            for index, (left, right) in enumerate(zip(value, candidate))
+            if left != right
+        ]
+        if allow_substitution and len(mismatches) == 1:
+            return True
+        return (
+            len(mismatches) == 2
+            and mismatches[1] == mismatches[0] + 1
+            and value[mismatches[0]] == candidate[mismatches[1]]
+            and value[mismatches[1]] == candidate[mismatches[0]]
+        )
+
+    shorter, longer = (value, candidate) if len(value) < len(candidate) else (candidate, value)
+    short_index = long_index = differences = 0
+    while short_index < len(shorter) and long_index < len(longer):
+        if shorter[short_index] == longer[long_index]:
+            short_index += 1
+            long_index += 1
+            continue
+        differences += 1
+        long_index += 1
+        if differences > 1:
+            return False
+    return True
+
+
+def correct_common_typos(
+    value: object,
+    vocabulary: Collection[str],
+    *,
+    minimum_length: int = 4,
+    allow_substitution: bool = False,
+) -> str:
+    """Correct only unambiguous, near-match words from a controlled vocabulary."""
+    normalized_vocabulary = {
+        word.casefold() for word in vocabulary if len(word) >= minimum_length
+    }
+
+    def replace(match: re.Match[str]) -> str:
+        token = match.group(0)
+        folded = token.casefold()
+        if len(folded) < minimum_length or folded in normalized_vocabulary:
+            return token
+        candidates = [
+            candidate
+            for candidate in normalized_vocabulary
+            if _is_likely_typo(
+                folded, candidate, allow_substitution=allow_substitution
+            )
+        ]
+        return candidates[0] if len(candidates) == 1 else token
+
+    return re.sub(r"[^\W_]+", replace, str(value), flags=re.UNICODE)
+
+
+def normalize_query_spelling(value: object) -> str:
+    return correct_common_typos(value, RETRIEVAL_SPELLING_VOCABULARY)
 
 
 def tokenize(value: object) -> List[str]:
@@ -86,7 +159,8 @@ def retrieve_knowledge(
 ) -> List[KnowledgeChunk]:
     indexed, average_length, document_frequency = _get_search_index(additional_sources)
     safe_limit = max(1, min(int(limit or 4), 8))
-    query_token_counts = Counter(tokenize(query))
+    corrected_query = normalize_query_spelling(query)
+    query_token_counts = Counter(tokenize(corrected_query))
     if not query_token_counts:
         return []
 
@@ -110,7 +184,7 @@ def retrieve_knowledge(
                 score += 1.15 * query_weight
             if token in item["title_tokens"]:
                 score += 0.75 * query_weight
-        normalized_query = query.casefold().strip()
+        normalized_query = corrected_query.casefold().strip()
         document = item["document"]
         normalized_title = str(document["title"]).casefold()
         normalized_keywords = " ".join(str(value) for value in document["keywords"]).casefold()
