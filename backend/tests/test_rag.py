@@ -167,6 +167,37 @@ class RagTests(unittest.TestCase):
 
         self.assertEqual(retrieve_knowledge("Do you sell food?"), [])
 
+    def test_conversational_instructions_and_corrections_use_history(self) -> None:
+        request = "Can you first ask how am I feeling today"
+        reply = conversational_reply(request, "Atif")
+        self.assertIsNotNone(reply)
+        answer, _ = reply or ("", [])
+        self.assertIn("how are you feeling today", answer)
+        self.assertIn("Atif", answer)
+
+        correction = conversational_reply(
+            "You are not giving me the desired output, please first see what I asked you",
+            "Atif",
+            [{"role": "user", "content": request}],
+        )
+        self.assertIsNotNone(correction)
+        correction_answer, _ = correction or ("", [])
+        self.assertIn("misunderstood", correction_answer)
+        self.assertIn("how are you feeling today", correction_answer)
+
+    def test_unrelated_short_question_does_not_inherit_previous_topic(self) -> None:
+        question = "Can you tell me about a lion"
+        history = [
+            {
+                "role": "user",
+                "content": "Can you customize a wooden panel for my restaurant?",
+            }
+        ]
+        self.assertEqual(build_retrieval_query(question, history), question)
+        self.assertEqual(retrieve_knowledge(question), [])
+        answer = local_answer(question, [], "Atif")
+        self.assertIn("outside what I can help with", answer)
+
     def test_common_spelling_errors_do_not_break_chat_intent_or_retrieval(self) -> None:
         identity_reply = conversational_reply("Do you knwo me", "Atif")
         self.assertIsNotNone(identity_reply)

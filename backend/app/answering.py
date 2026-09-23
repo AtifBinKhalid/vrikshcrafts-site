@@ -43,6 +43,20 @@ BOT_NATURE_PATTERN = re.compile(
     r"^(?:are you (?:a bot|an ai|human|real)|are you a real person)[?!. ]*$",
     flags=re.IGNORECASE,
 )
+ASK_USER_FEELING_PATTERN = re.compile(
+    r"\b(?:(?:can|could|will|would) you (?:please )?(?:first )?)?"
+    r"ask(?: me)? (?:how (?:am i|i am|i'm) (?:feeling|doing)(?: today)?|"
+    r"how i feel(?: today)?|how my day is(?: going)?)\b",
+    flags=re.IGNORECASE,
+)
+DISSATISFACTION_PATTERN = re.compile(
+    r"\b(?:not (?:giving|getting) (?:me )?(?:the )?(?:desired|right|expected) "
+    r"(?:output|answer|response)|not what i (?:asked|meant|wanted)|"
+    r"you (?:misunderstood|didn't understand|did not understand)|"
+    r"wrong (?:answer|response)|please (?:first )?(?:see|read|understand) "
+    r"what i asked)\b",
+    flags=re.IGNORECASE,
+)
 GOODBYE_PATTERN = re.compile(
     r"^(?:bye|goodbye|see you|talk to you later|that(?:'s| is) all)[?!. ]*$",
     flags=re.IGNORECASE,
@@ -138,11 +152,12 @@ PROJECT_CONVERSATION_SUGGESTIONS = [
     "What should I share for a quotation?",
 ]
 INTENT_SPELLING_VOCABULARY = {
-    "alright", "answer", "anything", "another", "ask", "change", "different",
-    "doing", "else", "good", "hello", "help", "human", "know", "name", "okay",
-    "project", "question", "ready", "real", "remember", "respond", "something",
-    "subject", "sure", "thing", "topic", "want", "what", "who", "working",
-    "would", "you",
+    "alright", "answer", "anything", "another", "ask", "asked", "change", "desired",
+    "different", "doing", "else", "expected", "feel", "feeling", "first", "good",
+    "hello", "help", "human", "know", "misunderstood", "name", "okay", "output",
+    "project", "question", "ready", "real", "remember", "respond", "response",
+    "something", "subject", "sure", "thing", "today", "topic", "understand", "want",
+    "what", "who", "working", "would", "wrong", "you",
 }
 WORK_SCOPE_TERMS = {
     "architect", "artisan", "availability", "board", "boards", "brand", "branding",
@@ -176,6 +191,7 @@ def is_work_related(question: str) -> bool:
 def conversational_reply(
     question: str,
     visitor_name: str,
+    history: Optional[List[Dict[str, str]]] = None,
 ) -> Optional[Tuple[str, List[str]]]:
     """Handle dialogue acts that should never be sent through document retrieval."""
     message = _normalize_intent_spelling(question.strip())
@@ -183,6 +199,34 @@ def conversational_reply(
         "I don’t know your name yet, but I’d be happy to learn it."
     )
     personal_greeting = f", {visitor_name}" if visitor_name else ""
+    previous_user_message = next(
+        (
+            item.get("content", "")
+            for item in reversed(history or [])
+            if item.get("role") == "user" and item.get("content", "").strip()
+        ),
+        "",
+    )
+
+    if DISSATISFACTION_PATTERN.search(message):
+        if ASK_USER_FEELING_PATTERN.search(
+            _normalize_intent_spelling(previous_user_message)
+        ):
+            return (
+                f"You’re right—I misunderstood what you wanted. Let me ask properly: "
+                f"how are you feeling today{personal_greeting}?",
+                GENERAL_CONVERSATION_SUGGESTIONS,
+            )
+        return (
+            "You’re right—I may have misunderstood you. Tell me what you wanted me "
+            "to respond to, and I’ll take it from there.",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if ASK_USER_FEELING_PATTERN.search(message):
+        return (
+            f"Of course{personal_greeting}—how are you feeling today?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
 
     if IDENTITY_PATTERN.fullmatch(message):
         return (
@@ -266,7 +310,7 @@ def conversational_reply(
 
 def build_retrieval_query(question: str, history: List[Dict[str, str]]) -> str:
     """Resolve short follow-ups against the most recent user topic."""
-    if not REFERENCE_PATTERN.search(question) and len(tokenize(question)) > 3:
+    if not REFERENCE_PATTERN.search(question):
         return question
 
     previous_user_message = next(

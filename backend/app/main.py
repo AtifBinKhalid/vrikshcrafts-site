@@ -239,7 +239,9 @@ async def chat(request: Request) -> JSONResponse:
             )
         question = str(validated["message"])
         visitor_name = str(validated["visitorName"])
-        conversation = conversational_reply(question, visitor_name)
+        conversation = conversational_reply(
+            question, visitor_name, validated["history"]
+        )
         if conversation:
             conversation_answer, conversation_suggestions = conversation
             return json_response(
