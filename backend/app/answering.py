@@ -17,11 +17,30 @@ THANKS_PATTERN = re.compile(
     flags=re.IGNORECASE,
 )
 HOW_ARE_YOU_PATTERN = re.compile(
-    r"^(?:how are you|how(?:'s| is) it going|what(?:'s| is) up)[?!. ]*$",
+    r"^(?:(?:hi|hello|hey)[,! ]+)?(?:how are you|how have you been|"
+    r"how(?:'s| is) it going|how(?:'s| is) your day|what(?:'s| is) up|"
+    r"are you (?:okay|alright|well))[?!. ]*$",
     flags=re.IGNORECASE,
 )
 ABOUT_ASSISTANT_PATTERN = re.compile(
-    r"^(?:who are you|what can you do|how can you help(?: me)?)[?!. ]*$",
+    r"^(?:who are you|what can you do|what do you help with|"
+    r"how can you help(?: me)?)[?!. ]*$",
+    flags=re.IGNORECASE,
+)
+ASSISTANT_ACTIVITY_PATTERN = re.compile(
+    r"^(?:(?:hi|hello|hey)[,! ]+)?(?:what are you doing|what are you up to|"
+    r"what do you do|are you (?:there|working|ready))[?!. ]*$",
+    flags=re.IGNORECASE,
+)
+RESPONSE_EXPECTATION_PATTERN = re.compile(
+    r"^(?:if i ask you anything(?:,? then)? how would you (?:respond|answer)|"
+    r"how would you (?:respond|answer)(?: if i ask you something)?|"
+    r"can you answer my questions|will you answer my questions|"
+    r"can i ask you anything)[?!. ]*$",
+    flags=re.IGNORECASE,
+)
+BOT_NATURE_PATTERN = re.compile(
+    r"^(?:are you (?:a bot|an ai|human|real)|are you a real person)[?!. ]*$",
     flags=re.IGNORECASE,
 )
 GOODBYE_PATTERN = re.compile(
@@ -119,9 +138,23 @@ PROJECT_CONVERSATION_SUGGESTIONS = [
     "What should I share for a quotation?",
 ]
 INTENT_SPELLING_VOCABULARY = {
-    "alright", "another", "ask", "change", "different", "else", "good", "hello",
-    "help", "know", "name", "okay", "project", "question", "remember", "something",
-    "subject", "sure", "thing", "topic", "want", "what", "who", "would", "you",
+    "alright", "answer", "anything", "another", "ask", "change", "different",
+    "doing", "else", "good", "hello", "help", "human", "know", "name", "okay",
+    "project", "question", "ready", "real", "remember", "respond", "something",
+    "subject", "sure", "thing", "topic", "want", "what", "who", "working",
+    "would", "you",
+}
+WORK_SCOPE_TERMS = {
+    "architect", "artisan", "availability", "board", "boards", "brand", "branding",
+    "budget", "cafe", "care", "carved", "carving", "catalog", "cladding", "cleaning",
+    "contact", "counter", "craft", "custom", "customization", "decor", "delivery",
+    "designer", "dimensions", "finish", "furniture", "gift", "handcrafted", "hotel",
+    "install", "installation", "interior", "logo", "manufacture", "manufacturing",
+    "material", "menu", "minimum", "office", "order", "panel", "panels", "payment",
+    "price", "pricing", "production", "project", "quantity", "quote", "reception",
+    "restaurant", "retail", "return", "sample", "shelf", "shelves", "shipping",
+    "signage", "space", "store", "supplier", "tabletop", "teak", "timeline", "timber",
+    "wall", "warranty", "wholesale", "wood", "workshop", "vrikshcrafts",
 }
 
 
@@ -135,6 +168,11 @@ def _normalize_intent_spelling(value: str) -> str:
     )
 
 
+def is_work_related(question: str) -> bool:
+    normalized = normalize_query_spelling(question)
+    return bool(set(tokenize(normalized)) & WORK_SCOPE_TERMS)
+
+
 def conversational_reply(
     question: str,
     visitor_name: str,
@@ -144,10 +182,60 @@ def conversational_reply(
     greeting = f"Yes—I know you as {visitor_name} from this chat." if visitor_name else (
         "I don’t know your name yet, but I’d be happy to learn it."
     )
+    personal_greeting = f", {visitor_name}" if visitor_name else ""
 
     if IDENTITY_PATTERN.fullmatch(message):
         return (
             f"{greeting} How can I help you today?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if HOW_ARE_YOU_PATTERN.fullmatch(message):
+        return (
+            f"I’m doing well{personal_greeting}—thanks for asking! I’m here and ready "
+            "to help. What’s on your mind?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if ASSISTANT_ACTIVITY_PATTERN.fullmatch(message):
+        return (
+            "Right now, I’m here with you—ready to help with vrikshcrafts products, "
+            "customization, quotations, shipping, or a project idea. What would you "
+            "like to talk about?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if RESPONSE_EXPECTATION_PATTERN.fullmatch(message):
+        return (
+            "You can ask me anything. I’ll respond naturally to casual conversation, "
+            "use verified information for vrikshcrafts questions, and tell you honestly "
+            "when something is outside my scope instead of guessing.",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if BOT_NATURE_PATTERN.fullmatch(message):
+        return (
+            "I’m an AI assistant, not a person—but I’ll keep our conversation natural "
+            "and be honest about what I do and don’t know. How can I help?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if ABOUT_ASSISTANT_PATTERN.fullmatch(message):
+        return (
+            "I’m the vrikshcrafts website assistant. I can chat with you naturally and "
+            "help with products, customization, quotations, shipping, or planning a "
+            "project. What would you like to explore?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if THANKS_PATTERN.fullmatch(message):
+        return (
+            "You’re welcome—I’m glad I could help. What would you like to explore next?",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if GOODBYE_PATTERN.fullmatch(message):
+        return (
+            "It was good talking with you. Whenever you’re ready, I’ll be here to help.",
+            GENERAL_CONVERSATION_SUGGESTIONS,
+        )
+    if SMALL_TALK_PATTERN.fullmatch(message):
+        return (
+            f"Hi{personal_greeting}! It’s good to hear from you. What would you like "
+            "to talk about?",
             GENERAL_CONVERSATION_SUGGESTIONS,
         )
     if TOPIC_SWITCH_PATTERN.search(message):
@@ -347,11 +435,18 @@ def local_answer(
         prefix = "I’m sorry this has been frustrating. " if re.search(
             r"\b(?:angry|bad|frustrat|problem|upset|wrong)\w*\b", question, re.IGNORECASE
         ) else ""
+        if is_work_related(question):
+            return (
+                f"{prefix}I understand what you’re asking, but I don’t have that specific "
+                "vrikshcrafts detail in my verified information yet, and I don’t want to "
+                "guess. Share a little more context, or contact the team if you need a "
+                "confirmed project-specific answer."
+            )
         return (
-            f"{prefix}I don’t have enough verified information to answer that confidently, "
-            "and I’d rather not guess. Could you tell me a little more about what you mean? "
-            "For example, is this about a product, customization, shipping, pricing, or an "
-            "existing project?"
+            f"{prefix}Sorry, that’s outside what I can help with here. I’m focused on "
+            "vrikshcrafts products and projects, so I’d rather be honest than give you an "
+            "unreliable answer. I can still help with products, customization, quotations, "
+            "shipping, or planning a project."
         )
 
     answer = _synthesize_from_sources(

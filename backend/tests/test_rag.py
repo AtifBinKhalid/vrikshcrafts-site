@@ -6,6 +6,7 @@ from backend.app.chunking import chunk_knowledge_text
 from backend.app.answering import (
     build_retrieval_query,
     conversational_reply,
+    is_work_related,
     local_answer,
     suggested_follow_ups,
 )
@@ -77,9 +78,17 @@ class RagTests(unittest.TestCase):
 
     def test_local_answer_clarifies_unknown_questions(self) -> None:
         answer = local_answer("Can you repair my laptop?", [], "Ativ")
-        self.assertIn("rather not guess", answer)
-        self.assertIn("tell me a little more", answer)
-        self.assertNotIn("knowledge base", answer)
+        self.assertIn("outside what I can help with", answer)
+        self.assertIn("rather be honest", answer)
+        self.assertIn("vrikshcrafts products and projects", answer)
+
+        related_answer = local_answer(
+            "Can you make a wooden item that is not in the catalog?", [], "Ativ"
+        )
+        self.assertIn("specific vrikshcrafts detail", related_answer)
+        self.assertIn("don’t want to guess", related_answer)
+        self.assertTrue(is_work_related("Can you customize wooden wall panels?"))
+        self.assertFalse(is_work_related("Can you repair my laptop?"))
 
     def test_local_answer_does_not_promise_exact_delivery(self) -> None:
         sources = retrieve_knowledge("Can you deliver 40 panels next Friday?", limit=5)
@@ -136,6 +145,27 @@ class RagTests(unittest.TestCase):
         self.assertIsNone(
             conversational_reply("What products do you offer?", "Atif")
         )
+
+    def test_general_conversation_feels_natural_and_stays_in_scope(self) -> None:
+        examples = {
+            "How are you?": ("doing well", "Atif"),
+            "What are you doing?": ("Right now", "ready to help"),
+            "If I ask you anything then how would you respond?": (
+                "ask me anything",
+                "outside my scope",
+            ),
+            "Are you a real person?": ("AI assistant", "natural"),
+        }
+        for question, expected_phrases in examples.items():
+            with self.subTest(question=question):
+                reply = conversational_reply(question, "Atif")
+                self.assertIsNotNone(reply)
+                answer, suggestions = reply or ("", [])
+                for phrase in expected_phrases:
+                    self.assertIn(phrase, answer)
+                self.assertTrue(suggestions)
+
+        self.assertEqual(retrieve_knowledge("Do you sell food?"), [])
 
     def test_common_spelling_errors_do_not_break_chat_intent_or_retrieval(self) -> None:
         identity_reply = conversational_reply("Do you knwo me", "Atif")

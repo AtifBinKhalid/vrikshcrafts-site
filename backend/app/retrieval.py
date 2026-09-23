@@ -36,6 +36,9 @@ RETRIEVAL_SPELLING_VOCABULARY = {
     "products", "project", "quotation", "quote", "return", "services", "shipping",
     "signage", "timeline", "warranty", "whatsapp", "wood", "wooden",
 }
+GENERIC_RETRIEVAL_TERMS = {
+    "available", "buy", "make", "order", "sell", "service", "store",
+}
 
 
 def _is_likely_typo(value: str, candidate: str, *, allow_substitution: bool) -> bool:
@@ -167,6 +170,7 @@ def retrieve_knowledge(
     results: List[KnowledgeChunk] = []
     for item in indexed:
         score = 0.0
+        matched_tokens: set[str] = set()
         body_tokens = item["body_tokens"]
         for token, raw_query_weight in query_token_counts.items():
             query_weight = min(raw_query_weight, 3)
@@ -176,13 +180,16 @@ def retrieve_knowledge(
                 1 + (len(indexed) - docs_with_token + 0.5) / (docs_with_token + 0.5)
             )
             if frequency > 0:
+                matched_tokens.add(token)
                 normalized_frequency = (frequency * 2.2) / (
                     frequency + 1.2 * (0.25 + 0.75 * (len(body_tokens) / average_length))
                 )
                 score += inverse_frequency * normalized_frequency * query_weight
             if token in item["keyword_tokens"]:
+                matched_tokens.add(token)
                 score += 1.15 * query_weight
             if token in item["title_tokens"]:
+                matched_tokens.add(token)
                 score += 0.75 * query_weight
         normalized_query = corrected_query.casefold().strip()
         document = item["document"]
@@ -196,6 +203,9 @@ def retrieve_knowledge(
             score += 2
         result = dict(document)
         result["score"] = round(score, 4)
+        specific_query_tokens = set(query_token_counts) - GENERIC_RETRIEVAL_TERMS
+        if specific_query_tokens and not (matched_tokens & specific_query_tokens):
+            continue
         if score >= min_score:
             results.append(result)
     results.sort(key=lambda result: float(result["score"]), reverse=True)
